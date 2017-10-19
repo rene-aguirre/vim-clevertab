@@ -28,7 +28,7 @@ function! CleverTab#Complete(type)
 
 
   if a:type == 'tab' && !g:CleverTab#stop
-    if strpart( getline('.'), 0, col('.')-1 ) !~ '\k' " =~ '^\s*$'
+    if col('.') == 1 || strpart(getline('.'), col('.')-2, col('.')-1) =~ '\s'
       let g:CleverTab#stop=1
       echom "Regular Tab"
       let g:CleverTab#next_step_direction="0"
