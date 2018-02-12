@@ -26,15 +26,14 @@ function! CleverTab#Complete(type)
   endif
   let g:CleverTab#cursor_moved=g:CleverTab#last_cursor_col!=virtcol('.')
 
-
   if a:type == 'tab' && !g:CleverTab#stop
-    if col('.') == 1 || strpart(getline('.'), col('.')-2, col('.')-1) =~ '\s'
+    let l:tline = getline('.') . repeat(' ', max([0, col('.') - strlen(getline('.'))]))
+    if (col('.') == 1) || (strpart(l:tline, col('.')-2, 2) !~ '\w\s')
       let g:CleverTab#stop=1
       echom "Regular Tab"
       let g:CleverTab#next_step_direction="0"
       return "\<TAB>"
     endif
-
 
   elseif a:type == 'omni' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
     if &omnifunc != ''
@@ -116,6 +115,8 @@ function! CleverTab#Complete(type)
       return "\<C-N>"
     elseif g:CleverTab#next_step_direction=="N"
       return "\<C-P>"
+    else
+      return "\<Tab>"
     endif
   endif
 
