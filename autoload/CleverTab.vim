@@ -16,19 +16,28 @@ function! CleverTab#Complete(type)
     if !exists("g:CleverTab#next_step_direction")
       echom "Clevertab Start"
       let g:CleverTab#next_step_direction="0"
+    else
+      echom "tab start"
     endif
     let g:CleverTab#last_cursor_col=virtcol('.')
     let g:CleverTab#cursor_moved=0
     let g:CleverTab#eat_next=0
     let g:CleverTab#autocmd_set=1
     let g:CleverTab#stop=0
-    return ""
+    let g:CleverTab#tline=getline('.') . repeat(' ', max([0, col('.') - strlen(getline('.'))]))
+    let g:CleverTab#word_ends=strpart(g:CleverTab#tline, col('.')-2, 2) =~ '\w\(\W\|$\)'
+    let g:CleverTab#path_starts=strpart(g:CleverTab#tline, col('.')-2, 2) =~ '/\(\s\|$\)'
+    if g:CleverTab#word_ends
+        echom "@word end"
+    endif
+    if g:CleverTab#path_starts
+        echom "@path start"
+    endif
   endif
   let g:CleverTab#cursor_moved=g:CleverTab#last_cursor_col!=virtcol('.')
 
   if a:type == 'tab' && !g:CleverTab#stop
-    let l:tline = getline('.') . repeat(' ', max([0, col('.') - strlen(getline('.'))]))
-    if (col('.') == 1) || (strpart(l:tline, col('.')-2, 2) !~ '\w\s')
+    if (col('.') == 1) || !(g:CleverTab#word_ends || g:CleverTab#path_starts)
       let g:CleverTab#stop=1
       echom "Regular Tab"
       let g:CleverTab#next_step_direction="0"
@@ -51,11 +60,21 @@ function! CleverTab#Complete(type)
       return "\<C-X>\<C-U>"
     endif
 
+  elseif a:type == "file" && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
+    if g:CleverTab#word_ends || g:CleverTab#path_starts
+      echom "File Complete"
+      let g:CleverTab#next_step_direction="N"
+      let g:CleverTab#eat_next=1
+      return "\<C-X>\<C-F>"
+    endif
+
   elseif a:type == 'keyword' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
-    echom "Keyword Complete"
-    let g:CleverTab#next_step_direction="P"
-    let g:CleverTab#eat_next=1
-    return "\<C-P>"
+    if g:CleverTab#word_ends
+      echom "Keyword Complete"
+      let g:CleverTab#next_step_direction="N"
+      let g:CleverTab#eat_next=1
+      return "\<C-X>\<C-N>"
+    endif
 
   elseif a:type == 'dictionary' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
     echom "Dictionary Complete"
@@ -95,7 +114,6 @@ function! CleverTab#Complete(type)
     let g:CleverTab#next_step_direction="0"
     let g:CleverTab#stop=1
     return "\<Tab>"
-
 
   elseif a:type == "stop" || a:type == "next"
     if g:CleverTab#stop || g:CleverTab#eat_next==1
