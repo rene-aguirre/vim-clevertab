@@ -9,7 +9,7 @@ function! CleverTab#Complete(type)
   if a:type == 'start'
     if has("autocmd")
       augroup CleverTabAu
-        autocmd CursorMovedI *  if pumvisible() == 0 && g:CleverTab#autocmd_set|let g:CleverTab#autocmd_set = 0|pclose|call CleverTab#ClearAutocmds()|endif
+        autocmd CursorMovedI * if pumvisible() == 0 && g:CleverTab#autocmd_set|let g:CleverTab#autocmd_set = 0|pclose|call CleverTab#ClearAutocmds()|endif
         autocmd InsertLeave *  if pumvisible() == 0 && g:CleverTab#autocmd_set|let g:CleverTab#autocmd_set = 0|pclose|call CleverTab#ClearAutocmds()|endif
       augroup END
     endif
@@ -24,14 +24,17 @@ function! CleverTab#Complete(type)
     let g:CleverTab#eat_next=0
     let g:CleverTab#autocmd_set=1
     let g:CleverTab#stop=0
-    let g:CleverTab#tline=getline('.') . repeat(' ', max([0, col('.') - strlen(getline('.'))]))
-    let g:CleverTab#word_ends=strpart(g:CleverTab#tline, col('.')-2, 2) =~ '\w\(\W\|$\)'
-    let g:CleverTab#path_starts=strpart(g:CleverTab#tline, col('.')-2, 2) =~ '/\(\s\|$\)'
+    let l:leftOfCursor=strpart(getline('.'), 0, col('.')-1)
+    let l:rightOfCursor=strpart(getline('.'), col('.')-1, col('$'))
+    let g:CleverTab#word_ends=(l:leftOfCursor =~ '\w$' && (l:rightOfCursor == '' || l:rightOfCursor =~ '^\W'))
+    let g:CleverTab#path_starts=(l:leftOfCursor =~ '/$' && (l:rightOfCursor == '' || l:rightOfCursor =~ '^\W'))
+    echom "LoC='" . l:leftOfCursor . "'"
+    echom "RoC='" . l:rightOfCursor . "'"
     if g:CleverTab#word_ends
-        echom "@word end"
+        echom "word ends"
     endif
     if g:CleverTab#path_starts
-        echom "@path start"
+        echom "path starts"
     endif
   endif
   let g:CleverTab#cursor_moved=g:CleverTab#last_cursor_col!=virtcol('.')
@@ -45,7 +48,7 @@ function! CleverTab#Complete(type)
     endif
 
   elseif a:type == 'omni' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
-    if &omnifunc != ''
+    if &omnifunc != '' && g:CleverTab#word_ends 
       echom "Omni Complete"
       let g:CleverTab#next_step_direction="N"
       let g:CleverTab#eat_next=1
@@ -53,7 +56,7 @@ function! CleverTab#Complete(type)
     endif
 
   elseif a:type == 'user' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
-    if &completefunc != ''
+    if &completefunc != '' && g:CleverTab#word_ends
       echom "User Complete"
       let g:CleverTab#next_step_direction="N"
       let g:CleverTab#eat_next=1
@@ -77,10 +80,12 @@ function! CleverTab#Complete(type)
     endif
 
   elseif a:type == 'dictionary' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
-    echom "Dictionary Complete"
-    let g:CleverTab#next_step_direction="P"
-    let g:CleverTab#eat_next=1
-    return "\<C-X>\<C-K>"
+    if g:CleverTab#word_ends
+        echom "Dictionary Complete"
+        let g:CleverTab#next_step_direction="P"
+        let g:CleverTab#eat_next=1
+        return "\<C-X>\<C-K>"
+    endif
 
   elseif a:type == 'neocomplete' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
     echom "NeoComplete"
@@ -108,9 +113,14 @@ function! CleverTab#Complete(type)
     endif
     return ""
 
-
   elseif a:type == "forcedtab" && !g:CleverTab#stop
     echom "Forcedtab"
+    let g:CleverTab#next_step_direction="0"
+    let g:CleverTab#stop=1
+    return "\<Tab>"
+
+  elseif a:type == 'nopumtab' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
+    echom "NoPumTab" " insert if pum not opened
     let g:CleverTab#next_step_direction="0"
     let g:CleverTab#stop=1
     return "\<Tab>"
