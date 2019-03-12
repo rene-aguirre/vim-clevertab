@@ -113,14 +113,8 @@ function! CleverTab#Complete(type)
     endif
     return ""
 
-  elseif a:type == "forcedtab" && !g:CleverTab#stop
-    echom "Forcedtab"
-    let g:CleverTab#next_step_direction="0"
-    let g:CleverTab#stop=1
-    return "\<Tab>"
-
-  elseif a:type == 'nopumtab' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
-    echom "NoPumTab" " insert if pum not opened
+  elseif a:type == 'forcedtab' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
+    echom "forcedtab"
     let g:CleverTab#next_step_direction="0"
     let g:CleverTab#stop=1
     return "\<Tab>"
