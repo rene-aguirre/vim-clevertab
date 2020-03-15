@@ -120,17 +120,26 @@ function! CleverTab#Complete(type)
     return "\<Tab>"
 
   elseif a:type == "stop" || a:type == "next"
+    if !g:CleverTab#stop && pumvisible() && g:CleverTab#next_step_direction=="0"
+        echom "next setup"
+        let g:CleverTab#next_step_direction="N"
+        " let g:CleverTab#eat_next=1
+    endif
     if g:CleverTab#stop || g:CleverTab#eat_next==1
+      echom "sink tab"
       let g:CleverTab#stop=0
       let g:CleverTab#eat_next=0
       return ""
     endif
     if g:CleverTab#next_step_direction=="P"
+      echom "next-backward"
+      let g:CleverTab#stop=1
       return "\<C-P>"
     elseif g:CleverTab#next_step_direction=="N"
+      echom "next-forward"
+      let g:CleverTab#stop=1
       return "\<C-N>"
     endif
-
 
   elseif a:type == "prev"
     if g:CleverTab#next_step_direction=="P"
@@ -142,7 +151,7 @@ function! CleverTab#Complete(type)
     endif
   endif
 
-
+  message "Sink type=" . a:type
   return ""
 endfunction
 
