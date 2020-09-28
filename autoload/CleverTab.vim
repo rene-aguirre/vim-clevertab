@@ -124,10 +124,19 @@ function! CleverTab#Complete(type)
     echom "NeoComplete"
     let g:CleverTab#next_step_direction="N"
     let g:CleverTab#eat_next=1
-    return neocomplete#start_manual_complete()
+    try
+        let l:result = neocomplete#start_manual_complete()
+    catch
+        return ""
+    endtry
+    return l:result
 
   elseif a:type == 'neosnippet' && !g:CleverTab#cursor_moved && !g:CleverTab#stop
-    let g:neo_snip_x = neosnippet#mappings#expand_or_jump_impl()
+    try
+        let g:neo_snip_x = neosnippet#mappings#expand_or_jump_impl()
+    catch
+        return ""
+    endtry
     if neosnippet#expandable_or_jumpable()
       echom "NeoSnippet"
       let g:CleverTab#next_step_direction="0"
@@ -137,12 +146,16 @@ function! CleverTab#Complete(type)
     return ""
 
   elseif a:type == 'ultisnips' && !g:CleverTab#cursor_moved && !g:CleverTab#stop
-    let g:ulti_x = UltiSnips#ExpandSnippetOrJump()
-    if !exists("g:ulti_expand_or_jump_res") || g:ulti_expand_or_jump_res
+    try
+        let l:ulti_x = UltiSnips#ExpandSnippetOrJump()
+    catch
+        return ""
+    endtry
+    if exists("g:ulti_expand_or_jump_res") && g:ulti_expand_or_jump_res
       echom "Ultisnips"
       let g:CleverTab#next_step_direction="0"
       let g:CleverTab#stop=1
-      return g:ulti_x
+      return l:ulti_x
     endif
     return ""
 
