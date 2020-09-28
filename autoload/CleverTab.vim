@@ -38,6 +38,11 @@ function! CleverTab#Complete(type)
     endif
   endif
   let g:CleverTab#cursor_moved=g:CleverTab#last_cursor_col!=virtcol('.')
+  let l:complete_state=complete_info()
+  let l:cmode=complete_state['mode']
+  let l:cselected=complete_state['selected']
+  let l:ctrl_x_mode=l:cmode != '' && (l:cmode != 'eval' && l:cmode != 'unknown')
+  echom "mode=" . l:cmode . " selected=" . l:cselected . " pum=" . pumvisible() . " i_CTRL_X=" . l:ctrl_x_mode
 
   if a:type == 'tab' && !g:CleverTab#stop
     if (col('.') == 1) || !(g:CleverTab#word_ends || g:CleverTab#path_starts)
@@ -79,12 +84,40 @@ function! CleverTab#Complete(type)
       return "\<C-X>\<C-N>"
     endif
 
+  elseif a:type == 'complete' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
+    if g:CleverTab#word_ends
+      echom "i_CTRL-N Complete"
+      let g:CleverTab#next_step_direction="N"
+      let g:CleverTab#eat_next=1
+      if l:ctrl_x_mode
+        return "\<C-E>\<C-N>"
+      else
+        return "\<C-N>"
+      endif
+    endif
+
   elseif a:type == 'dictionary' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
     if g:CleverTab#word_ends
         echom "Dictionary Complete"
         let g:CleverTab#next_step_direction="P"
         let g:CleverTab#eat_next=1
         return "\<C-X>\<C-K>"
+    endif
+
+  elseif a:type == 'spelling' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
+    if g:CleverTab#word_ends
+        echom "Spelling Complete"
+        let g:CleverTab#next_step_direction="P"
+        let g:CleverTab#eat_next=1
+        return "\<C-X>s"
+    endif
+
+  elseif a:type == 'tags' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
+    if g:CleverTab#word_ends
+        echom "Tags Complete"
+        let g:CleverTab#next_step_direction="P"
+        let g:CleverTab#eat_next=1
+        return "\<C-X>\<C-]>"
     endif
 
   elseif a:type == 'neocomplete' && !pumvisible() && !g:CleverTab#cursor_moved && !g:CleverTab#stop
@@ -105,7 +138,7 @@ function! CleverTab#Complete(type)
 
   elseif a:type == 'ultisnips' && !g:CleverTab#cursor_moved && !g:CleverTab#stop
     let g:ulti_x = UltiSnips#ExpandSnippetOrJump()
-    if g:ulti_expand_or_jump_res
+    if !exists("g:ulti_expand_or_jump_res") || g:ulti_expand_or_jump_res
       echom "Ultisnips"
       let g:CleverTab#next_step_direction="0"
       let g:CleverTab#stop=1
